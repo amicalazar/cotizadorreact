@@ -1,20 +1,157 @@
-import React from 'react';
+import React, {useState} from 'react';
+import styled from '@emotion/styled';
+import {obtenerDiferenciaYear, calcularMarca, obtenerPlan} from '../helper'
 
-const Formulario = () => {
+const Campo = styled.div`
+    display: flex;
+    margin-bottom: 1rem;
+    align-items: center;
+`;
+
+const Label = styled.label`
+    flex: 0 0 100px;
+`;
+
+const Select = styled.select`
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #e1e1e1;
+    -webkit-appearance: none;
+`
+
+const InputRatio = styled.input`
+    margin: 0 1rem;
+`
+
+const Boton = styled.button`
+    background-color: #00838F;
+    font-size: 16px;
+    width: 100%;
+    padding: 1rem;
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: bold;
+    border: none;
+    transition: background-color .3s ease;
+    margin-top: 2rem;
+
+    &:hover {
+        background-color: #26C6DA;
+        cursor: pointer;
+    }
+`
+
+const Error = styled.div`
+    background-color: red;
+    color: white;
+    padding: 1rem;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 2rem;
+`
+
+const Formulario = ({setResumen, setCargando}) => {
+
+    const [datos, setDatos] = useState({
+        marca: '',
+        year: '',
+        plan:'basico'
+    });
+
+    const [error, setError] = useState(false);
+
+    const {marca, year, plan} = datos;
+
+    const obtenerInformacion = event => {
+        setDatos({
+            ...datos,
+            [event.target.name]: event.target.value
+        })
+    }
+
+    const handleSubmit = event => {
+        event.preventDefault();
+
+        //Validar
+        if(marca.trim() === '' || year.trim() === '' || plan.trim() === ''){
+            setError(true);
+            return;
+        }
+
+        setError(false);
+
+        //Base del seguro
+
+        let resultado = 2000;
+
+        //Obtener diferencia de anos
+
+        const diferencia = obtenerDiferenciaYear(year);
+        console.log(diferencia);
+
+        //Restar el 3% por ano
+
+        resultado -= ((diferencia * 3) * resultado) / 100;
+       
+
+        //Americano 15%
+        //Asiatico 5%
+        //Europeo 30%
+
+        resultado = calcularMarca(marca) * resultado;
+
+        //Plan basico 1.2
+        //Plan completo 1.5
+
+        resultado = parseFloat(obtenerPlan(plan) * resultado).toFixed(2);
+ 
+        //Set spinner y pasar resultados.
+
+        setCargando(true);
+
+        setTimeout(() => {
+
+            setCargando(false);
+
+            setResumen({
+                cotizacion: number(resultado),
+                datos
+            });
+
+        }, 3000);
+
+        //Pasar resultados
+        
+
+
+    }
+
     return ( 
-        <form>
-            <div>
-                <label>Marca</label>
-                <select>
+        <form
+            onSubmit={handleSubmit}
+        >
+            {error && <Error>Todos los campos son obligatorios</Error>}
+            <Campo>
+                <Label>Marca</Label>
+                <Select
+                    name="marca"
+                    value={marca}
+                    onChange={obtenerInformacion}
+                >
                     <option value="">-- Seleccione --</option>
                     <option value="americano">Americano</option>
                     <option value="europeo">Europeo</option>
                     <option value="asiatico">Asiatico</option>
-                </select>
-            </div>
-            <div>
-                <label>Ano</label>
-                <select>
+                </Select>
+            </Campo>
+            <Campo>
+                <Label>Ano</Label>
+                <Select
+                    name="year"
+                    value={year}
+                    onChange={obtenerInformacion}
+                >
                 <option value="">-- Seleccione --</option>
                     <option value="2021">2021</option>
                     <option value="2020">2020</option>
@@ -26,22 +163,26 @@ const Formulario = () => {
                     <option value="2014">2014</option>
                     <option value="2013">2013</option>
                     <option value="2012">2012</option>
-                </select>
-            </div>
-            <div>
-                <label>Plan</label>
-                <input
+                </Select>
+            </Campo>
+            <Campo>
+                <Label>Plan</Label>
+                <InputRatio
                     type="radio"
                     name="plan"
-                    vaule="basico"
+                    value="basico"
+                    checked={plan === "basico"}
+                    onChange={obtenerInformacion}
                 /> Basico
-                <input
+                <InputRatio
                     type="radio"
                     name="plan"
-                    vaule="completo"
+                    value="completo"
+                    checked={plan === "completo"}
+                    onChange={obtenerInformacion}
                 /> Completo
-            </div>
-            <button type="button">Cotizar</button>
+            </Campo>
+            <Boton type="submit">Cotizar</Boton>
         </form>
      );
 }
